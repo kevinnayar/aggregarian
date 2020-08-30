@@ -15,7 +15,21 @@ function getDate(text: string): Date {
   const split = text.split('_');
   const day = split[0];
   const time = split[1];
-  return new Date(`${day}, ${time}`);
+  return new Date(`${day}, ${time} GMT`);
+}
+
+function toLocalizedTimestamp(date: Date): string {
+  const options = {
+    timeZone: 'America/Chicago',
+    timeZoneName: 'short',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  };
+  return date.toLocaleString('en-US', options);
 }
 
 interface IRawData {
@@ -24,23 +38,23 @@ interface IRawData {
 
 interface IReading {
   date: Date,
+  localizedTimestamp: string,
   isDry: boolean,
 };
 
-function getReadings(data: IRawData): IReading[] {
-  const readings: IReading[] = [];
+function getCurrentReading(data: IRawData): void | IReading {
   const sortedKeys = Object.keys(data).sort((a, b) => a.localeCompare(b));
-  
-  for (const key of sortedKeys) {
-    const date = getDate(key);
-    const isDry = data[key];
-    readings.push({
-      date,
-      isDry,
-    });
-  }
+  if (!sortedKeys.length) return undefined;
 
-  return readings;
+  const key = sortedKeys[sortedKeys.length - 1];
+  const date = getDate(key);
+  const localizedTimestamp = toLocalizedTimestamp(date);
+  const isDry = data[key];
+  return {
+    date,
+    localizedTimestamp,
+    isDry,
+  };
 }
 
 function main() {
@@ -54,8 +68,8 @@ function main() {
     'value',
     snapshot => {
       const data = snapshot.val();
-      const readings = getReadings(data);
-      console.log({ readings });
+      const currentReading = getCurrentReading(data);
+      console.log({ currentReading });
     },
     err => {
       console.log('error: ', err.message);

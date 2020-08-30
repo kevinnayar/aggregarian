@@ -27,12 +27,13 @@ func initSensor(pin int) rpio.Pin {
 	return sensor
 }
 
-func initFirebase() (*db.Client, context.Context) {
+func initFirebase(projectID string) (*db.Client, context.Context) {
 	ctx := context.Background()
 	conf := &firebase.Config{
-		DatabaseURL: "https://aggregarian.firebaseio.com",
+		DatabaseURL: fmt.Sprintf("https://%s.firebaseio.com", projectID),
 	}
-	opt := option.WithCredentialsFile("aggregarian.json")
+	fileName := fmt.Sprintf("%s.json", projectID)
+	opt := option.WithCredentialsFile(fileName)
 
 	app, err := firebase.NewApp(ctx, conf, opt)
 	if err != nil {
@@ -50,7 +51,7 @@ func initFirebase() (*db.Client, context.Context) {
 func main() {
 	PIN := 21
 	sensor := initSensor(PIN)
-	client, ctx := initFirebase()
+	client, ctx := initFirebase("aggregarian")
 
 	for {
 		t := time.Now()
