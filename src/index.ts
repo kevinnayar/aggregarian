@@ -13,21 +13,22 @@ function getDatabase(credentials: ServiceAccount, projectId: string): database.D
 
 function getDate(text: string): Date {
   const split = text.split('_');
-
   const day = split[0];
   const time = split[1];
-
-  const date = new Date(`${day}, ${time}`);
-  return date;
+  return new Date(`${day}, ${time}`);
 }
 
-type Reading = {
+interface IRawData {
+  [key: string]: boolean,
+};
+
+interface IReading {
   date: Date,
   isDry: boolean,
 };
 
-function getReadings(data: { [key: string]: boolean }): Reading[] {
-  const readings: Reading[] = [];
+function getReadings(data: IRawData): IReading[] {
+  const readings: IReading[] = [];
   const sortedKeys = Object.keys(data).sort((a, b) => a.localeCompare(b));
   
   for (const key of sortedKeys) {
@@ -51,13 +52,13 @@ function main() {
 
   ref.on(
     'value',
-    (snapshot) => {
+    snapshot => {
       const data = snapshot.val();
       const readings = getReadings(data);
-      console.log({readings});
+      console.log({ readings });
     },
-    (err) => {
-      console.log(err);
+    err => {
+      console.log('error: ', err.message);
       process.exit();
     },
   );
