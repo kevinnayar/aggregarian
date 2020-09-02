@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	firebase "firebase.google.com/go"
@@ -13,10 +12,9 @@ import (
 	"google.golang.org/api/option"
 )
 
-func initSensor(pin int) rpio.Pin {
+func getSensorInstance(pin int) rpio.Pin {
 	if err := rpio.Open(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal("Error initializing soil moisture sensor:", err)
 	}
 
 	sensor := rpio.Pin(pin)
@@ -27,12 +25,12 @@ func initSensor(pin int) rpio.Pin {
 	return sensor
 }
 
-func initFirebase(projectID string) (*db.Client, context.Context) {
+func getDatabaseClient(projectName string) (*db.Client, context.Context) {
 	ctx := context.Background()
 	conf := &firebase.Config{
-		DatabaseURL: fmt.Sprintf("https://%s.firebaseio.com", projectID),
+		DatabaseURL: fmt.Sprintf("https://%s.firebaseio.com", projectName),
 	}
-	fileName := fmt.Sprintf("%s.json", projectID)
+	fileName := fmt.Sprintf("%s.json", projectName)
 	opt := option.WithCredentialsFile(fileName)
 
 	app, err := firebase.NewApp(ctx, conf, opt)
@@ -48,28 +46,50 @@ func initFirebase(projectID string) (*db.Client, context.Context) {
 	return client, ctx
 }
 
+// Reading represents the current state of the sensor
+type Reading struct {
+	ReadableDate string `json:"ReadableDate,omitempty"`
+	IsDry        bool
+}
+
 func main() {
 	PIN := 21
-	sensor := initSensor(PIN)
-	client, ctx := initFirebase("aggregarian")
+	PROJECTNAME := "aggregarian"
+	TIMEZONE := "America/Chicago"
+
+	sensor := getSensorInstance(PIN)
+	client, ctx := getDatabaseClient(PROJECTNAME)
 
 	for {
-		t := time.Now()
-		formattedTime := t.Format("2006-01-02_15:04:05")
+		utc := time.Now().UTC()
+		local := utc
+
+		location, locationErr := time.LoadLocation(TIMEZONE)
+		if locationErr != nil {
+			log.Fatalln("Error setting location:", locationErr)
+		} else {
+			local = local.In(location)
+		}
+
+		date := utc.Format("2006-01-02T15:04:05Z07:00")
+		readableDate := local.Format("Mon, 02 Jan 2006 15:04:05 MST")
 
 		isDry := true
 		if sensor.Read() == 0 {
 			isDry = false
 		}
 
-		ref := client.NewRef(formattedTime)
-		err := ref.Set(ctx, isDry)
+		reference := "log/" + date
+		referenceErr := client.NewRef(reference).Set(ctx, &Reading{
+			ReadableDate: readableDate,
+			IsDry:        isDry,
+		})
 
-		if err != nil {
-			log.Fatalln("Error setting value:", err)
+		if referenceErr != nil {
+			log.Fatalln("Error setting value:", referenceErr)
 		}
 
-		log.Printf("Dry = %v, Timestamp = %v", isDry, formattedTime)
+		log.Printf("Date: %v, ReadableDate: %v, IsDry: %v", date, readableDate, isDry)
 
 		time.Sleep(6 * time.Hour)
 	}
