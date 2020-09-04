@@ -2,7 +2,8 @@ dist/
 *.log
 *.tgz
 node_modules/
-src/config.ts
 src/*.old
 src/*.json
 src/service-account-key.json
+config/*.json
+config/service-account-key.json

@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "yarn tsc -b",
-    "start": "ts-node src/index.ts"
+    "start": "ts-node receiver/index.ts"
   },
   "prettier": {
     "singleQuote": true,

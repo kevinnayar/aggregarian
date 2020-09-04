@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-
     "target": "ES2018",
     "module": "commonjs",
     "outDir": "dist",
