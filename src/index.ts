@@ -10,66 +10,70 @@ function getDatabaseInstance(credentials: ServiceAccount, projectId: string): da
   return admin.database();
 }
 
-function getUTCDateFromKey(key: string): Date {
-  const [date, time] = key.split('_');
-  return new Date(`${date}, ${time} GMT`);
-}
+interface IRawDataLogEntry {
+  ReadableDate: string,
+  IsDry: boolean,
+};
 
-function localeStringToFormatted(localeString: string): string {
-  const [date, time] = localeString.split(',');
-  const [month, day, year] = date.split('/');
-  return `${year}-${month}-${day},${time}`;
-}
-
-function dateToLocalDateString(date: Date, locale: string, tz: string): string {
-  const options = {
-    timeZone: tz,
-    timeZoneName: 'short',
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  };
-  const localeString = date.toLocaleString(locale, options);
-  const formatted = localeStringToFormatted(localeString);
-  return formatted;
-}
+interface IRawDataLog {
+  [key: string]: IRawDataLogEntry,
+};
 
 interface IRawData {
-  [key: string]: boolean,
+  log: IRawDataLog,
 };
 
 interface IReading {
-  dateUTC: Date,
-  localDateString: string,
-  locale: string,
-  timezone: string,
+  dateUtcIso8601: string,
+  dateLocalReadable: string,
   isDry: boolean,
-};
+}
 
-function getLatestReading(data: IRawData, locale: string, tz: string): void | IReading {
-  const sortedKeys = Object.keys(data).sort((a, b) => a.localeCompare(b));
-  if (!sortedKeys.length) return undefined;
+function formatLogEntry(key: string, log: IRawDataLog): IReading {
+  const entry: IRawDataLogEntry = log[key];
+  if (!entry) throw new Error(`Could not find item: ${key} in log`);
 
-  const key = sortedKeys[sortedKeys.length - 1];
-  const dateUTC = getUTCDateFromKey(key);
-  const localDateString = dateToLocalDateString(dateUTC, locale, tz);
-  const isDry = data[key];
   return {
-    dateUTC,
-    localDateString,
-    locale,
-    timezone: tz,
-    isDry,
+    dateUtcIso8601: key,
+    dateLocalReadable: entry.ReadableDate,
+    isDry: entry.IsDry,
   };
 }
 
+function getLogFromData(data: IRawData): IRawDataLog {
+  if (!data.log) throw new Error('Could not find log in data');
+  return data.log;
+}
+
+function getSortedLogKeys(log: IRawDataLog): string[] {
+  const keys = Object.keys(log).sort((a, b) => b.localeCompare(a));
+  if (!keys.length) throw new Error('Could not find any keys in log');
+  return keys;
+}
+
+function getNLatestReadings(data: IRawData, n: number): IReading[] {
+  const log = getLogFromData(data);
+  const keys = getSortedLogKeys(log);
+  const nKeys = keys.slice(0, n);
+
+  const readings = nKeys.reduce((all: IReading[], key: string) => {
+    const reading = formatLogEntry(key, log);
+    all.push(reading);
+    return all;
+  }, []);
+  return readings;
+}
+
+function getLatestReading(data: IRawData): void | IReading {
+  const log = getLogFromData(data);
+  const keys = getSortedLogKeys(log);
+  const key = keys[0];
+
+  const reading = formatLogEntry(key, log);
+  return reading;
+}
+
 function main() {
-  const LOCALE = 'en-US';
-  const TIMEZONE = 'America/Chicago';
   const projectId = serviceAccount.project_id;
   const credentials = serviceAccount as ServiceAccount;
   
@@ -80,8 +84,12 @@ function main() {
     'value',
     snapshot => {
       const data = snapshot.val();
-      const latestReading = getLatestReading(data, LOCALE, TIMEZONE);
-      console.log({ latestReading });
+
+      const lastReading = getLatestReading(data);
+      console.log('lastReading', lastReading);
+
+      const last10Readings = getNLatestReadings(data, 10);
+      console.log('last10Readings', last10Readings);
     },
     err => {
       console.log('error: ', err.message);

@@ -53,18 +53,18 @@ type Reading struct {
 }
 
 func main() {
-	PIN := 21
-	PROJECTNAME := "aggregarian"
-	TIMEZONE := "America/Chicago"
+	const pin = 21
+	const projectID = "aggregarian"
+	const timezone = "America/Chicago"
 
-	sensor := getSensorInstance(PIN)
-	client, ctx := getDatabaseClient(PROJECTNAME)
+	sensor := getSensorInstance(pin)
+	client, ctx := getDatabaseClient(projectID)
 
 	for {
 		utc := time.Now().UTC()
 		local := utc
 
-		location, locationErr := time.LoadLocation(TIMEZONE)
+		location, locationErr := time.LoadLocation(timezone)
 		if locationErr != nil {
 			log.Fatalln("Error setting location:", locationErr)
 		} else {
