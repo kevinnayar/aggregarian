@@ -24,8 +24,8 @@ interface IRawData {
 };
 
 interface IReading {
-  dateUtcIso8601: string,
-  dateLocalReadable: string,
+  timestampUtcIso8601: string,
+  timestampLocalReadable: string,
   isDry: boolean,
 }
 
@@ -34,8 +34,8 @@ function formatLogEntry(key: string, log: IRawDataLog): IReading {
   if (!entry) throw new Error(`Could not find item: ${key} in log`);
 
   return {
-    dateUtcIso8601: key,
-    dateLocalReadable: entry.ReadableDate,
+    timestampUtcIso8601: key,
+    timestampLocalReadable: entry.ReadableDate,
     isDry: entry.IsDry,
   };
 }
