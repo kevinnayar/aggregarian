@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
 import { database, ServiceAccount } from 'firebase-admin';
-import * as serviceAccount from '../config/service-account-key.json';
+import * as serviceAccount from '../../database/aggregarian.json';
 
 function getDatabaseInstance(credentials: ServiceAccount, projectId: string): database.Database {
   admin.initializeApp({

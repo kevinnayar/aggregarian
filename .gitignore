@@ -7,3 +7,5 @@ src/*.json
 src/service-account-key.json
 config/*.json
 config/service-account-key.json
+
+database/*.json
