@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -14,15 +13,26 @@ func main() {
 	ioMethod := os.Args[1]
 
 	switch ioMethod {
-	case "receive":
-		fmt.Printf("Starting I/O method... '%s'\n", ioMethod)
-		receiver.Start(projectName)
+	case "receive-all":
+		if data, err := receiver.GetAll(projectName); err != nil {
+			log.Fatal("Error in receive-all: ", err)
+		} else {
+			log.Printf("%+v\n", data)
+		}
+
+	case "receive-latest":
+		if data, err := receiver.GetLatest(projectName); err != nil {
+			log.Fatal("Error in receive-latest: ", err)
+		} else {
+			log.Printf("%+v\n", data)
+		}
 
 	case "send":
-		fmt.Printf("Starting I/O method... '%s'\n", ioMethod)
 		sender.Start(projectName)
 
 	default:
-		log.Fatal("\nInvalid I/O method: '", ioMethod, "'.\nSupported I/O methods: 'receive' or 'send'")
+		log.Fatal("\nInvalid I/O method: '", ioMethod,
+			"'.\nSupported I/O methods: 'receive-all', 'receive-latest', or 'send'",
+		)
 	}
 }
