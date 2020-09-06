@@ -5,4 +5,6 @@ _Aggregate soil moisture sensor data from house plants and push realtime notific
 `go run main.go send`
 
 #### Receive data from Firebase
-`go run main.go receive`
+`go run main.go receive-all`
+
+`go run main.go receive-latest`
