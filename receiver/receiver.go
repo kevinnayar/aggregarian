@@ -29,7 +29,7 @@ func getData(projectName string) ([]ReadingResult, error) {
 
 	reading := map[string]Reading{}
 	if err := client.NewRef("log/").Get(ctx, &reading); err != nil {
-		log.Fatalln("Error setting value:", err)
+		log.Fatalln("Error getting value:", err)
 		return nil, err
 	}
 
